@@ -390,7 +390,14 @@ footer a:hover { color: var(--blue); }
 <!-- NAV -->
 <nav>
   <div class="container nav-inner">
-    <a href="#" class="logo">Маржа<span>WB</span></a>
+    <div style="display:flex;align-items:center;gap:32px">
+      <a href="index.html" class="logo">Маржа<span>WB</span></a>
+      <div style="display:flex;gap:24px" class="nav-links-desktop">
+        <a href="index.html" style="font-size:.9rem;font-weight:600;color:var(--blue);text-decoration:none">Калькулятор</a>
+        <a href="competitors.html" style="font-size:.9rem;font-weight:500;color:var(--gray-500);text-decoration:none">Конкуренты</a>
+        <a href="ai-forecast.html" style="font-size:.9rem;font-weight:500;color:var(--gray-500);text-decoration:none">AI-прогноз</a>
+      </div>
+    </div>
     <button class="btn btn-outline btn-sm" onclick="alert('Авторизация будет доступна в ближайшее время')">Войти</button>
   </div>
 </nav>

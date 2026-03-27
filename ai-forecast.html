@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-прогноз спроса — МаржаWB</title>
+<meta name="description" content="AI-прогноз спроса для продавцов Wildberries. Анализ ниши и прогноз продаж на 3 месяца.">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --blue: #2563EB;
+  --blue-hover: #1d4ed8;
+  --blue-light: #eff6ff;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --yellow: #ca8a04;
+  --yellow-light: #fefce8;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --shadow: 0 2px 8px rgba(0,0,0,.08);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,.1), 0 4px 10px rgba(0,0,0,.06);
+  --radius: 12px;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--gray-900);
+  line-height: 1.6;
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+/* ─── NAV ─── */
+nav {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--gray-200);
+  z-index: 100;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.logo {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--blue);
+  text-decoration: none;
+  letter-spacing: -.02em;
+}
+.logo span { color: var(--gray-900); }
+.nav-links {
+  display: flex;
+  gap: 24px;
+}
+.nav-links a {
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--gray-500);
+  text-decoration: none;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--gray-900); }
+.nav-links a.active {
+  color: var(--blue);
+  font-weight: 600;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: .95rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  text-decoration: none;
+  font-family: inherit;
+}
+.btn:active { transform: scale(.97); }
+.btn-outline {
+  background: transparent;
+  color: var(--blue);
+  border: 1.5px solid var(--blue);
+  padding: 8px 20px;
+}
+.btn-outline:hover { background: var(--blue-light); }
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+  padding: 12px 28px;
+}
+.btn-primary:hover { background: var(--blue-hover); box-shadow: 0 4px 14px rgba(37,99,235,.35); }
+.btn-primary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-sm { padding: 10px 22px; font-size: .9rem; }
+.btn-full { width: 100%; }
+
+/* ─── HEADER ─── */
+.page-header {
+  text-align: center;
+  padding: 56px 20px 48px;
+  background: linear-gradient(170deg, var(--blue-light) 0%, #fff 60%);
+}
+.page-header h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  letter-spacing: -.02em;
+}
+.page-header .subtitle {
+  font-size: clamp(.95rem, 2vw, 1.15rem);
+  color: var(--gray-500);
+  max-width: 560px;
+  margin: 0 auto 16px;
+}
+.tech-badge {
+  display: inline-block;
+  font-size: .75rem;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* ─── KEY WARNING BANNER ─── */
+.key-warning {
+  display: none;
+  background: var(--yellow-light);
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: .9rem;
+  color: var(--gray-700);
+  max-width: 600px;
+  margin: -20px auto 0;
+  text-align: center;
+}
+.key-warning a {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+.key-warning a:hover { text-decoration: underline; }
+
+/* ─── FORM ─── */
+.form-section { padding: 40px 0 64px; }
+.form-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 36px 32px;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.field label {
+  display: block;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color .2s, box-shadow .2s;
+  background: #fff;
+  color: var(--gray-900);
+  resize: vertical;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+.field input::placeholder,
+.field textarea::placeholder { color: var(--gray-400); }
+
+/* ─── LOADING ─── */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 48px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.loading.active { display: block; }
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--gray-200);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p {
+  color: var(--gray-500);
+  font-size: .95rem;
+}
+
+/* ─── ERROR ─── */
+.error-block {
+  display: none;
+  background: var(--red-light);
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: .9rem;
+  color: var(--red);
+  max-width: 600px;
+  margin: 16px auto 0;
+  text-align: center;
+}
+.error-block.active { display: block; }
+
+/* ─── RESULTS ─── */
+.results-section {
+  display: none;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 20px 64px;
+}
+.results-section.active { display: block; }
+.results-section h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.months-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.month-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px 20px;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeUp .45s ease forwards;
+}
+.month-card:nth-child(2) { animation-delay: .08s; }
+.month-card:nth-child(3) { animation-delay: .16s; }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+.month-label {
+  font-size: .8rem;
+  color: var(--gray-500);
+  font-weight: 500;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.month-volume {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.month-change {
+  font-size: .85rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.month-comment {
+  font-size: .8rem;
+  color: var(--gray-500);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+.progress-bar {
+  height: 6px;
+  background: var(--gray-100);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--blue);
+  border-radius: 3px;
+  transition: width .6s ease;
+}
+
+/* ─── SUMMARY ─── */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.summary-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 24px;
+  opacity: 0;
+  animation: fadeUp .45s ease .2s forwards;
+}
+.summary-label {
+  font-size: .8rem;
+  color: var(--gray-500);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.summary-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.trend-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.trend-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.risk-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: .82rem;
+  font-weight: 600;
+}
+.risk-reason {
+  font-size: .85rem;
+  color: var(--gray-500);
+  margin-top: 6px;
+}
+
+/* ─── TIPS ─── */
+.tips-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 28px;
+  border-left: 3px solid var(--blue);
+  margin-bottom: 16px;
+  opacity: 0;
+  animation: fadeUp .45s ease .28s forwards;
+}
+.tips-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.tip-item {
+  font-size: .9rem;
+  color: var(--gray-700);
+  padding: 6px 0;
+  line-height: 1.5;
+}
+
+.disclaimer {
+  font-size: .75rem;
+  color: var(--gray-400);
+  text-align: center;
+  margin: 20px 0 32px;
+}
+
+/* ─── PRO UPSELL ─── */
+.pro-upsell {
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+  margin-top: 8px;
+}
+.pro-upsell p {
+  font-size: .95rem;
+  color: var(--gray-700);
+  margin-bottom: 16px;
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 32px 0;
+  border-top: 1px solid var(--gray-200);
+  text-align: center;
+  color: var(--gray-500);
+  font-size: .85rem;
+}
+footer a {
+  color: var(--gray-500);
+  text-decoration: none;
+  transition: color .2s;
+}
+footer a:hover { color: var(--blue); }
+.footer-links {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 40px 36px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  animation: modalIn .25s ease;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--gray-400);
+  line-height: 1;
+  padding: 4px;
+  transition: color .2s;
+  font-family: inherit;
+}
+.modal-close:hover { color: var(--gray-900); }
+.modal h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; }
+.modal ul {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 24px;
+}
+.modal li {
+  padding: 5px 0;
+  font-size: .9rem;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal li::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+  background-size: 12px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ─── KEY MODAL ─── */
+.key-modal-text {
+  text-align: left;
+  font-size: .9rem;
+  color: var(--gray-700);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.key-modal-text code {
+  background: var(--gray-100);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .85rem;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  .months-grid { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .form-card { padding: 24px 18px; }
+  .page-header { padding: 40px 20px 36px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container nav-inner">
+    <div class="nav-left">
+      <a href="index.html" class="logo">Маржа<span>WB</span></a>
+      <div class="nav-links">
+        <a href="index.html">Калькулятор</a>
+        <a href="competitors.html">Конкуренты</a>
+        <a href="ai-forecast.html" class="active">AI-прогноз</a>
+      </div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="alert('Авторизация будет доступна в ближайшее время')">Войти</button>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<section class="page-header">
+  <h1>AI-прогноз спроса</h1>
+  <p class="subtitle">Введи данные о товаре — AI проанализирует нишу и даст прогноз на 3 месяца</p>
+  <div class="tech-badge">&#10022; На базе Groq AI &middot; Llama 3.3</div>
+</section>
+
+<!-- KEY WARNING -->
+<div class="key-warning" id="keyWarning">&#9888;&#65039; Вставьте API-ключ Groq в код. Получить бесплатно: <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
+
+<!-- FORM -->
+<section class="form-section">
+  <div class="form-card" id="formCard">
+    <div class="field">
+      <label for="category">Категория</label>
+      <select id="category">
+        <option value="Одежда">Одежда</option>
+        <option value="Обувь">Обувь</option>
+        <option value="Электроника">Электроника</option>
+        <option value="Косметика">Косметика</option>
+        <option value="Товары для дома">Товары для дома</option>
+        <option value="Игрушки">Игрушки</option>
+        <option value="Спорт">Спорт</option>
+        <option value="Прочее">Прочее</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="description">Описание товара</label>
+      <textarea id="description" rows="2" placeholder="Например: силиконовые лопатки для кухни, набор 3 шт."></textarea>
+    </div>
+    <div class="field">
+      <label for="price">Текущая цена (&#8381;)</label>
+      <input type="number" id="price" placeholder="3500" min="0">
+    </div>
+    <div class="field">
+      <label for="volume">Текущие продажи (шт./мес.)</label>
+      <input type="number" id="volume" placeholder="50" min="0">
+    </div>
+    <div class="field">
+      <label for="season">Сезонность</label>
+      <select id="season">
+        <option value="Весенний">Весенний</option>
+        <option value="Летний">Летний</option>
+        <option value="Осенний">Осенний</option>
+        <option value="Зимний">Зимний</option>
+        <option value="Круглогодичный">Круглогодичный</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full" id="submitBtn">Получить AI-прогноз</button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Groq AI анализирует нишу...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-block" id="errorBlock"></div>
+</section>
+
+<!-- RESULTS -->
+<section class="results-section" id="resultsSection">
+
+  <h2>Прогноз по месяцам</h2>
+  <div class="months-grid" id="monthsGrid"></div>
+
+  <h2>Итог</h2>
+  <div class="summary-grid" id="summaryGrid"></div>
+
+  <h2>Рекомендации AI</h2>
+  <div class="tips-card" id="tipsCard"></div>
+
+  <div class="disclaimer">Прогноз основан на данных Wildberries и сезонных паттернах. Точность: &plusmn;15-25%.</div>
+
+  <div class="pro-upsell">
+    <p>Хочешь прогноз на основе реальных данных твоих продаж и 100&nbsp;000+ конкурентов WB?</p>
+    <button class="btn btn-primary btn-sm" id="proBtn">Подключить тариф Про</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-links">
+      <a href="index.html">&larr; Калькулятор маржи</a>
+      <a href="competitors.html">Анализ конкурентов &rarr;</a>
+    </div>
+    <div>МаржаWB &copy; 2026</div>
+  </div>
+</footer>
+
+<!-- PRO MODAL -->
+<div class="modal-overlay" id="proModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('proModal').classList.remove('active')">&times;</button>
+    <h3>Тариф Про — 1490 &#8381;/мес</h3>
+    <ul>
+      <li>Реальные данные WB</li>
+      <li>Анализ 100 000+ конкурентов</li>
+      <li>Еженедельные отчёты</li>
+      <li>Экспорт в Excel</li>
+    </ul>
+    <button class="btn btn-primary btn-sm" onclick="alert('Регистрация и оплата будут доступны в ближайшее время')">Подключить</button>
+  </div>
+</div>
+
+<!-- KEY INSTRUCTION MODAL -->
+<div class="modal-overlay" id="keyModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('keyModal').classList.remove('active')">&times;</button>
+    <h3>Подключите Groq AI</h3>
+    <div class="key-modal-text">
+      1. Перейдите на <a href="https://console.groq.com" target="_blank" style="color:var(--blue);font-weight:600">console.groq.com</a><br>
+      2. Зарегистрируйтесь (бесплатно)<br>
+      3. Откройте <strong>API Keys</strong> &rarr; <strong>Create</strong><br>
+      4. Вставьте ключ ниже:
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <input type="password" id="keyInput" placeholder="gsk_..." style="font-size:.9rem">
+    </div>
+    <button class="btn btn-primary btn-sm btn-full" id="saveKeyBtn">Сохранить ключ</button>
+  </div>
+</div>
+
+<script>
+(function() {
+
+  // Получить ключ бесплатно: console.groq.com → API Keys → Create
+  // Ключ хранится в localStorage браузера
+  var GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+
+  var submitBtn = document.getElementById('submitBtn');
+  var formCard = document.getElementById('formCard');
+  var loading = document.getElementById('loading');
+  var errorBlock = document.getElementById('errorBlock');
+  var resultsSection = document.getElementById('resultsSection');
+  var monthsGrid = document.getElementById('monthsGrid');
+  var summaryGrid = document.getElementById('summaryGrid');
+  var tipsCard = document.getElementById('tipsCard');
+  var keyWarning = document.getElementById('keyWarning');
+  var proModal = document.getElementById('proModal');
+  var keyModal = document.getElementById('keyModal');
+
+  function checkKey() {
+    GROQ_API_KEY = localStorage.getItem('groq_api_key') || '';
+    var hasKey = GROQ_API_KEY.length > 10;
+    keyWarning.style.display = hasKey ? 'none' : 'block';
+    return hasKey;
+  }
+  checkKey();
+
+  function getNextMonths() {
+    var names = ['Январь','Февраль','Март','Апрель','Май','Июнь',
+                 'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    var now = new Date();
+    return [
+      names[(now.getMonth() + 1) % 12],
+      names[(now.getMonth() + 2) % 12],
+      names[(now.getMonth() + 3) % 12]
+    ];
+  }
+
+  async function getForecast(data) {
+    var months = getNextMonths();
+
+    var prompt = 'Ты — аналитик маркетплейса Wildberries. Дай прогноз продаж на следующие 3 месяца.\n\n' +
+      'Данные о товаре:\n' +
+      '- Категория: ' + data.category + '\n' +
+      '- Описание: ' + data.description + '\n' +
+      '- Цена: ' + data.price + ' ₽\n' +
+      '- Текущие продажи: ' + data.volume + ' шт/мес\n' +
+      '- Сезонность: ' + data.season + '\n' +
+      '- Следующие 3 месяца: ' + months.join(', ') + '\n\n' +
+      'Ответь ТОЛЬКО валидным JSON без markdown, без пояснений — только JSON:\n' +
+      '{\n' +
+      '  "trend": "рост" или "стабильно" или "снижение",\n' +
+      '  "risk": "низкий" или "средний" или "высокий",\n' +
+      '  "risk_reason": "одна короткая фраза",\n' +
+      '  "months": [\n' +
+      '    { "label": "' + months[0] + '", "volume": целое_число, "comment": "до 8 слов" },\n' +
+      '    { "label": "' + months[1] + '", "volume": целое_число, "comment": "до 8 слов" },\n' +
+      '    { "label": "' + months[2] + '", "volume": целое_число, "comment": "до 8 слов" }\n' +
+      '  ],\n' +
+      '  "tips": [\n' +
+      '    "совет 1 — конкретный, до 12 слов",\n' +
+      '    "совет 2 — конкретный, до 12 слов",\n' +
+      '    "совет 3 — конкретный, до 12 слов"\n' +
+      '  ]\n' +
+      '}';
+
+    var response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + GROQ_API_KEY
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'Ты аналитик маркетплейса Wildberries. Отвечай только валидным JSON, без markdown, без пояснений.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 600
+      })
+    });
+
+    if (!response.ok) {
+      var err = await response.json();
+      throw new Error(err.error?.message || 'Ошибка Groq API (' + response.status + ')');
+    }
+
+    var result = await response.json();
+    var text = result.choices[0].message.content;
+    var clean = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  }
+
+  function renderResults(forecast, inputVolume) {
+    monthsGrid.innerHTML = '';
+    var maxVol = Math.max.apply(null, forecast.months.map(function(m) { return m.volume; }));
+
+    forecast.months.forEach(function(m, i) {
+      var change = Math.round((m.volume - inputVolume) / inputVolume * 100);
+      var changeClass = change > 0 ? 'color-green' : (change < 0 ? 'color-red' : '');
+      var changeText = change > 0 ? ('+' + change + '%') : (change + '%');
+      var barWidth = maxVol > 0 ? Math.round(m.volume / maxVol * 100) : 0;
+
+      var card = document.createElement('div');
+      card.className = 'month-card';
+      card.style.animationDelay = (i * 0.08) + 's';
+      card.innerHTML =
+        '<div class="month-label">' + m.label + '</div>' +
+        '<div class="month-volume">' + Math.round(m.volume).toLocaleString('ru-RU') + ' шт.</div>' +
+        '<div class="month-change ' + changeClass + '">' + changeText + '</div>' +
+        '<div class="month-comment">' + m.comment + '</div>' +
+        '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + barWidth + '%"></div></div>';
+      monthsGrid.appendChild(card);
+    });
+
+    var trendMap = {
+      'рост': { icon: '&#8593;', cls: 'color-green', text: 'Рост' },
+      'стабильно': { icon: '&#8594;', cls: '', text: 'Стабильно' },
+      'снижение': { icon: '&#8595;', cls: 'color-red', text: 'Снижение' }
+    };
+    var t = trendMap[forecast.trend] || trendMap['стабильно'];
+
+    var riskMap = {
+      'низкий': { bg: 'var(--green-light)', color: 'var(--green)', text: 'Низкий' },
+      'средний': { bg: 'var(--yellow-light)', color: 'var(--yellow)', text: 'Средний' },
+      'высокий': { bg: 'var(--red-light)', color: 'var(--red)', text: 'Высокий' }
+    };
+    var r = riskMap[forecast.risk] || riskMap['средний'];
+
+    summaryGrid.innerHTML =
+      '<div class="summary-card">' +
+        '<div class="summary-label">Тренд</div>' +
+        '<div class="summary-value">' +
+          '<span class="trend-icon ' + t.cls + '">' + t.icon + '</span>' +
+          '<span class="trend-text ' + t.cls + '">' + t.text + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="summary-card">' +
+        '<div class="summary-label">Риск</div>' +
+        '<div class="summary-value">' +
+          '<span class="risk-badge" style="background:' + r.bg + ';color:' + r.color + '">' + r.text + '</span>' +
+        '</div>' +
+        '<div class="risk-reason">' + (forecast.risk_reason || '') + '</div>' +
+      '</div>';
+
+    var tipsHtml = '<h3>Рекомендации</h3>';
+    (forecast.tips || []).forEach(function(tip) {
+      tipsHtml += '<div class="tip-item">&rarr; ' + tip + '</div>';
+    });
+    tipsCard.innerHTML = tipsHtml;
+
+    resultsSection.classList.add('active');
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  submitBtn.addEventListener('click', async function() {
+    if (!checkKey()) {
+      keyModal.classList.add('active');
+      return;
+    }
+
+    var data = {
+      category: document.getElementById('category').value,
+      description: document.getElementById('description').value.trim(),
+      price: document.getElementById('price').value,
+      volume: document.getElementById('volume').value,
+      season: document.getElementById('season').value
+    };
+
+    if (!data.description || !data.price || !data.volume) {
+      errorBlock.textContent = 'Заполните все поля: описание, цену и объём продаж';
+      errorBlock.classList.add('active');
+      return;
+    }
+
+    errorBlock.classList.remove('active');
+    resultsSection.classList.remove('active');
+    loading.classList.add('active');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Анализирую...';
+
+    try {
+      var forecast = await getForecast(data);
+      loading.classList.remove('active');
+      renderResults(forecast, parseInt(data.volume));
+    } catch (e) {
+      loading.classList.remove('active');
+      errorBlock.textContent = 'Ошибка: ' + e.message;
+      errorBlock.classList.add('active');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Получить AI-прогноз';
+    }
+  });
+
+  document.getElementById('proBtn').addEventListener('click', function() {
+    proModal.classList.add('active');
+  });
+
+  document.getElementById('saveKeyBtn').addEventListener('click', function() {
+    var val = document.getElementById('keyInput').value.trim();
+    if (val.length > 10) {
+      localStorage.setItem('groq_api_key', val);
+      keyModal.classList.remove('active');
+      checkKey();
+    }
+  });
+
+  [proModal, keyModal].forEach(function(m) {
+    m.addEventListener('click', function(e) {
+      if (e.target === m) m.classList.remove('active');
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>
