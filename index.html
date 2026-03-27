@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>МаржаWB — Калькулятор маржи для Wildberries</title>
+<meta name="description" content="Бесплатный калькулятор маржи для продавцов на Wildberries. Узнай реальную прибыль за 10 секунд.">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --blue: #2563EB;
+  --blue-hover: #1d4ed8;
+  --blue-light: #eff6ff;
+  --green: #16a34a;
+  --yellow: #ca8a04;
+  --red: #dc2626;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+  --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,.1), 0 4px 10px rgba(0,0,0,.06);
+  --radius: 12px;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--gray-900);
+  line-height: 1.6;
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+/* ─── NAV ─── */
+nav {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--gray-200);
+  z-index: 100;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.logo {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--blue);
+  text-decoration: none;
+  letter-spacing: -.02em;
+}
+.logo span { color: var(--gray-900); }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: .95rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  text-decoration: none;
+}
+.btn:active { transform: scale(.97); }
+.btn-outline {
+  background: transparent;
+  color: var(--blue);
+  border: 1.5px solid var(--blue);
+  padding: 8px 20px;
+}
+.btn-outline:hover { background: var(--blue-light); }
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+  padding: 12px 28px;
+}
+.btn-primary:hover { background: var(--blue-hover); box-shadow: 0 4px 14px rgba(37,99,235,.35); }
+.btn-sm { padding: 10px 22px; font-size: .9rem; }
+
+/* ─── HERO ─── */
+.hero {
+  text-align: center;
+  padding: 80px 20px 64px;
+  background: linear-gradient(170deg, var(--blue-light) 0%, #fff 60%);
+}
+.hero h1 {
+  font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.2;
+  max-width: 680px;
+  margin: 0 auto 20px;
+  letter-spacing: -.02em;
+}
+.hero p {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--gray-500);
+  margin-bottom: 36px;
+}
+
+/* ─── CALC ─── */
+.calc-section { padding: 64px 0 80px; background: var(--gray-50); }
+.calc-section h2 {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 40px;
+}
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+.calc-form {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.field label {
+  display: block;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+.field input,
+.field select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color .2s, box-shadow .2s;
+  background: #fff;
+  color: var(--gray-900);
+}
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+.field input::placeholder { color: var(--gray-400); }
+
+.results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.result-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp .4s ease forwards;
+}
+.result-card:nth-child(2) { animation-delay: .06s; }
+.result-card:nth-child(3) { animation-delay: .12s; }
+.result-card:nth-child(4) { animation-delay: .18s; }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+.result-card .label {
+  font-size: .82rem;
+  color: var(--gray-500);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.result-card .value {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.color-green { color: var(--green); }
+.color-yellow { color: var(--yellow); }
+.color-red { color: var(--red); }
+
+.save-prompt {
+  grid-column: 1 / -1;
+  background: var(--blue-light);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  margin-top: 8px;
+}
+.save-prompt p {
+  font-size: .95rem;
+  color: var(--gray-700);
+  margin-bottom: 14px;
+}
+
+/* ─── FEATURES ─── */
+.features { padding: 80px 0; }
+.features h2 {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 48px;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.feature-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+  text-align: center;
+}
+.feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--blue-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 18px;
+}
+.feature-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.feature-card p { font-size: .9rem; color: var(--gray-500); line-height: 1.5; }
+
+/* ─── PRICING ─── */
+.pricing { padding: 80px 0; background: var(--gray-50); }
+.pricing h2 {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 48px;
+}
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.price-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform .2s, box-shadow .2s;
+}
+.price-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.price-card.featured {
+  border: 2px solid var(--blue);
+}
+.badge {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--blue);
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 20px;
+}
+.price-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+.price-amount {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 12px 0 4px;
+}
+.price-amount span { font-size: .9rem; font-weight: 500; color: var(--gray-500); }
+.price-card ul {
+  list-style: none;
+  margin: 20px 0 28px;
+  flex: 1;
+}
+.price-card li {
+  padding: 6px 0;
+  font-size: .9rem;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.price-card li::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+  background-size: 12px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.price-card .btn { width: 100%; }
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 32px 0;
+  border-top: 1px solid var(--gray-200);
+  text-align: center;
+  color: var(--gray-500);
+  font-size: .85rem;
+}
+footer a {
+  color: var(--gray-500);
+  text-decoration: none;
+  transition: color .2s;
+}
+footer a:hover { color: var(--blue); }
+.footer-links { display: flex; gap: 20px; justify-content: center; margin-top: 8px; }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 40px 36px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  animation: modalIn .25s ease;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--gray-400);
+  line-height: 1;
+  padding: 4px;
+  transition: color .2s;
+}
+.modal-close:hover { color: var(--gray-900); }
+.modal h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; }
+.modal p { color: var(--gray-500); font-size: .95rem; margin-bottom: 24px; line-height: 1.5; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .hero { padding: 56px 20px 48px; }
+  .calc-grid { grid-template-columns: 1fr; gap: 28px; }
+  .results { grid-template-columns: 1fr 1fr; }
+  .features-grid { grid-template-columns: 1fr; gap: 16px; }
+  .pricing-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+@media (max-width: 480px) {
+  .results { grid-template-columns: 1fr; }
+  .calc-form { padding: 24px 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container nav-inner">
+    <a href="#" class="logo">Маржа<span>WB</span></a>
+    <button class="btn btn-outline btn-sm" onclick="alert('Авторизация будет доступна в ближайшее время')">Войти</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <h1>Знаешь ли ты реальную маржу своих товаров на WB?</h1>
+    <p>Введи данные — узнаешь за 10 секунд. Бесплатно.</p>
+    <a href="#calc" class="btn btn-primary" id="cta-btn">Рассчитать маржу</a>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section class="calc-section" id="calc">
+  <div class="container">
+    <h2>Калькулятор маржи Wildberries</h2>
+    <div class="calc-grid">
+
+      <div class="calc-form" id="calcForm">
+        <div class="field">
+          <label for="cost">Себестоимость товара (₽)</label>
+          <input type="number" id="cost" placeholder="1500" min="0">
+        </div>
+        <div class="field">
+          <label for="price">Цена продажи на WB (₽)</label>
+          <input type="number" id="price" placeholder="3500" min="0">
+        </div>
+        <div class="field">
+          <label for="category">Категория товара</label>
+          <select id="category">
+            <option value="23">Одежда — 23%</option>
+            <option value="20">Обувь — 20%</option>
+            <option value="10">Электроника — 10%</option>
+            <option value="17">Косметика — 17%</option>
+            <option value="18">Товары для дома — 18%</option>
+            <option value="15">Игрушки — 15%</option>
+            <option value="17">Спорт — 17%</option>
+            <option value="19">Прочее — 19%</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="volume">Объём продаж в месяц (шт.)</label>
+          <input type="number" id="volume" placeholder="50" min="0">
+        </div>
+        <div class="field">
+          <label for="weight">Вес товара (кг)</label>
+          <input type="number" id="weight" placeholder="0.5" min="0" step="0.1">
+        </div>
+      </div>
+
+      <div>
+        <div class="results" id="results">
+          <div class="result-card">
+            <div class="label">Маржа</div>
+            <div class="value" id="r-margin">— %</div>
+          </div>
+          <div class="result-card">
+            <div class="label">Прибыль с единицы</div>
+            <div class="value" id="r-profit-unit">— ₽</div>
+          </div>
+          <div class="result-card">
+            <div class="label">Прибыль в месяц</div>
+            <div class="value" id="r-profit-month">— ₽</div>
+          </div>
+          <div class="result-card">
+            <div class="label">Точка безубыточности</div>
+            <div class="value" id="r-breakeven">— шт./мес.</div>
+          </div>
+        </div>
+        <div class="save-prompt">
+          <p>Хочешь сохранить и сравнить несколько товаров?</p>
+          <button class="btn btn-primary btn-sm" id="saveBtn">Сохранить расчёт</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="container">
+    <h2>Почему именно МаржаWB?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Точная маржа</h3>
+        <p>Учитываем актуальные комиссии Wildberries по категориям товаров</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
+        <h3>Прогноз прибыли</h3>
+        <p>Считаем месячный доход по вашему объёму продаж</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Без Excel</h3>
+        <p>Всё онлайн — вводите данные и получаете результат мгновенно</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing">
+  <div class="container">
+    <h2>Тарифы</h2>
+    <div class="pricing-grid">
+
+      <div class="price-card">
+        <h3>Бесплатно</h3>
+        <div class="price-amount">0 ₽</div>
+        <ul>
+          <li>Калькулятор маржи</li>
+          <li>1 расчёт за раз</li>
+        </ul>
+        <a href="#calc" class="btn btn-outline btn-sm scroll-link">Использую сейчас</a>
+      </div>
+
+      <div class="price-card featured">
+        <div class="badge">Популярный</div>
+        <h3>Старт</h3>
+        <div class="price-amount">490 ₽ <span>/мес</span></div>
+        <ul>
+          <li>Сохранение расчётов</li>
+          <li>До 20 товаров</li>
+          <li>История изменений</li>
+        </ul>
+        <button class="btn btn-primary btn-sm" onclick="alert('Регистрация и оплата будут доступны в ближайшее время')">Начать</button>
+      </div>
+
+      <div class="price-card">
+        <h3>Про</h3>
+        <div class="price-amount">1490 ₽ <span>/мес</span></div>
+        <ul>
+          <li>Всё из тарифа Старт</li>
+          <li>Анализ конкурентов</li>
+          <li>Прогноз спроса (AI)</li>
+          <li>Экспорт в Excel</li>
+        </ul>
+        <button class="btn btn-primary btn-sm" onclick="alert('Регистрация и оплата будут доступны в ближайшее время')">Начать</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div>МаржаWB &copy; 2026</div>
+    <div class="footer-links">
+      <a href="#" onclick="event.preventDefault();alert('Страница в разработке')">Политика конфиденциальности</a>
+      <a href="#" onclick="event.preventDefault();alert('Страница в разработке')">Оферта</a>
+    </div>
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <h3>Функция доступна на платном тарифе</h3>
+    <p>Сохранение и сравнение товаров доступно в тарифе <strong>Старт</strong> от <strong>490&nbsp;₽/мес</strong></p>
+    <button class="btn btn-primary btn-sm" onclick="alert('Регистрация и оплата будут доступны в ближайшее время')">Перейти на Старт</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  var cost = document.getElementById('cost');
+  var price = document.getElementById('price');
+  var category = document.getElementById('category');
+  var volume = document.getElementById('volume');
+  var weight = document.getElementById('weight');
+  var rMargin = document.getElementById('r-margin');
+  var rProfitUnit = document.getElementById('r-profit-unit');
+  var rProfitMonth = document.getElementById('r-profit-month');
+  var rBreakeven = document.getElementById('r-breakeven');
+  var modal = document.getElementById('modal');
+  var results = document.getElementById('results');
+
+  function calc() {
+    var c = parseFloat(cost.value) || 0;
+    var p = parseFloat(price.value) || 0;
+    var cat = parseFloat(category.value) / 100;
+    var vol = parseInt(volume.value) || 0;
+    var w = parseFloat(weight.value) || 0;
+
+    if (p <= 0) {
+      rMargin.textContent = '— %';
+      rMargin.className = 'value';
+      rProfitUnit.textContent = '— ₽';
+      rProfitMonth.textContent = '— ₽';
+      rBreakeven.textContent = '— шт./мес.';
+      return;
+    }
+
+    var commission = p * cat;
+    var logistics = w <= 1 ? 80 : (w <= 5 ? 150 : 250);
+    var totalExpenses = c + commission + logistics;
+    var profitUnit = p - totalExpenses;
+    var marginPct = (profitUnit / p) * 100;
+    var profitMonth = profitUnit * vol;
+    var breakeven = profitUnit > 0 ? Math.ceil(totalExpenses / profitUnit) : 0;
+
+    rMargin.textContent = Math.round(marginPct) + ' %';
+    rMargin.className = 'value ' + (marginPct > 20 ? 'color-green' : (marginPct >= 10 ? 'color-yellow' : 'color-red'));
+    rProfitUnit.textContent = Math.round(profitUnit).toLocaleString('ru-RU') + ' ₽';
+    rProfitMonth.textContent = Math.round(profitMonth).toLocaleString('ru-RU') + ' ₽';
+    rBreakeven.textContent = breakeven > 0 ? breakeven + ' шт./мес.' : '—';
+
+    results.querySelectorAll('.result-card').forEach(function(card) {
+      card.style.animation = 'none';
+      card.offsetHeight;
+      card.style.animation = '';
+    });
+  }
+
+  [cost, price, category, volume, weight].forEach(function(el) {
+    el.addEventListener('input', calc);
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', function() {
+    modal.classList.add('active');
+  });
+  document.getElementById('modalClose').addEventListener('click', function() {
+    modal.classList.remove('active');
+  });
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) modal.classList.remove('active');
+  });
+
+  document.querySelectorAll('a[href^="#"]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
